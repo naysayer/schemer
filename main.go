@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/naysayer/schemer/api/table"
 	"github.com/naysayer/schemer/app"
-	"github.com/naysayer/schemer/table"
 )
 
 func main() {
@@ -28,9 +28,10 @@ func main() {
 		}
 
 		fmt.Println(cluster.Table)
-		for _, c := range cluster.Columns {
-			fmt.Println(c.Name, c.Type)
+		for _, c := range cluster.Contents() {
+			fmt.Println(c.Title(), c.Type(), c.Tags())
 		}
+		fmt.Println()
 	}
 }
 

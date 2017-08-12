@@ -10,7 +10,7 @@ import (
 type Str struct {
 }
 
-func (s Str) Name() string {
+func (s Str) Title() string {
 	return "StructName"
 }
 func (s Str) Contents() []attr.Attr {
@@ -22,7 +22,7 @@ func (s Str) Contents() []attr.Attr {
 type Att struct {
 }
 
-func (a Att) Name() string {
+func (a Att) Title() string {
 	return "AttrName"
 }
 func (a Att) Type() string {

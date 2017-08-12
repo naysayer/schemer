@@ -7,7 +7,7 @@ import (
 )
 
 type Structure interface {
-	Name() string
+	Title() string
 	Contents() []attr.Attr
 }
 
@@ -15,12 +15,12 @@ func Stringify(s Structure) string {
 	var buf bytes.Buffer
 
 	buf.WriteString("type ")
-	buf.WriteString(s.Name())
+	buf.WriteString(s.Title())
 	buf.WriteString(" struct {")
 
 	for _, attr := range s.Contents() {
 		buf.WriteString("\n")
-		buf.WriteString(attr.Name())
+		buf.WriteString(attr.Title())
 		buf.WriteString(" ")
 		buf.WriteString(attr.Type())
 		buf.WriteString(" ")

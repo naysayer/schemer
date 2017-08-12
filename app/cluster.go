@@ -1,23 +1,15 @@
 package app
 
 import (
-	"github.com/naysayer/schemer/table"
-	"github.com/naysayer/schemer/table/column"
+	"github.com/naysayer/schemer/api/structure/attr"
+	"github.com/naysayer/schemer/api/table"
+	"github.com/naysayer/schemer/api/table/column"
 )
 
 type Cluster struct {
 	Table   string
 	Columns []*column.Column
 }
-
-// func (c *Cluster) Print() {
-// 	fmt.Printf("Type %s struct {\n", c.Table)
-// 	for _, col := range c.Columns {
-// 		fmt.Printf("Type %s struct {\n", col.Name)
-// 		fmt.Printf("\t ")
-// 	}
-// 	fmt.Print("}")
-// }
 
 func (c Cluster) New(lines []string) (*Cluster, error) {
 	var columns []*column.Column
@@ -35,4 +27,16 @@ func (c Cluster) New(lines []string) (*Cluster, error) {
 	}
 
 	return &Cluster{Table: table, Columns: columns}, nil
+}
+
+func (c *Cluster) Title() string {
+	return c.Table
+}
+
+func (c *Cluster) Contents() []attr.Attr {
+	var atts []attr.Attr
+	for _, v := range c.Columns {
+		atts = append(atts, v)
+	}
+	return atts
 }

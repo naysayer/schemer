@@ -34,8 +34,8 @@ var (
 )
 
 type Column struct {
-	Name string
-	Type string
+	Name           string
+	Classification string
 }
 
 func (c Column) Populate(s string) (*Column, error) {
@@ -49,7 +49,17 @@ func (c Column) Populate(s string) (*Column, error) {
 		return &Column{}, err
 	}
 
-	return &Column{Name: name, Type: t}, nil
+	return &Column{Name: name, Classification: t}, nil
+}
+
+func (c *Column) Tags() string {
+	return ""
+}
+func (c *Column) Title() string {
+	return c.Name
+}
+func (c *Column) Type() string {
+	return c.Classification
 }
 
 func guard(s string) error {
