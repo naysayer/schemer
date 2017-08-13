@@ -53,10 +53,10 @@ func (c Column) Populate(s string) (*Column, error) {
 }
 
 func (c *Column) Tags() string {
-	return ""
+	return fmt.Sprintf("`db:\"%v\"`", c.Name)
 }
 func (c *Column) Title() string {
-	return c.Name
+	return strings.Title(c.Name)
 }
 func (c *Column) Type() string {
 	return c.Classification

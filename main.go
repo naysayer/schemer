@@ -7,11 +7,13 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/naysayer/schemer/api/structure"
 	"github.com/naysayer/schemer/api/table"
 	"github.com/naysayer/schemer/app"
 )
 
 func main() {
+	var structures []structure.Structure
 	contents, err := ioutil.ReadFile("./schema.txt")
 	if err != nil {
 		log.Fatal(err)
@@ -27,10 +29,15 @@ func main() {
 			log.Println(err)
 		}
 
-		fmt.Println(cluster.Table)
-		for _, c := range cluster.Contents() {
-			fmt.Println(c.Title(), c.Type(), c.Tags())
-		}
+		structures = append(structures, cluster)
+		PrintStrucutres(structures)
+	}
+}
+
+func PrintStrucutres(structures []structure.Structure) {
+	for _, str := range structures {
+		fmt.Print(structure.Stringify(str))
+		fmt.Println()
 		fmt.Println()
 	}
 }
