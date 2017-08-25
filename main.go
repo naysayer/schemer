@@ -30,8 +30,8 @@ func main() {
 		}
 
 		structures = append(structures, cluster)
-		PrintStrucutres(structures)
 	}
+	PrintStrucutres(structures)
 }
 
 func PrintStrucutres(structures []structure.Structure) {

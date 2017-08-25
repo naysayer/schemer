@@ -1,3 +1,5 @@
+// Packag strucutre used to define a structure interface and methods around it
+// that are ultimately used for the generation of golang structs
 package structure
 
 import (
@@ -6,11 +8,17 @@ import (
 	"github.com/naysayer/schemer/api/structure/attr"
 )
 
+// Structure is an interface that is used to represent a block of text
+// within a schema file that ultimate represents a database tabe. Where
+// title representes the title of the table, and contents, (a slice of attrs)
+// would be a list of the corresponding columns within said table.
 type Structure interface {
 	Title() string
 	Contents() []attr.Attr
 }
 
+// Stringify accepting a structure interface returns a string that represents
+// the native golang equilivent of that structure as a golang struct.
 func Stringify(s Structure) string {
 	var buf bytes.Buffer
 

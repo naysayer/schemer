@@ -1,7 +1,7 @@
 // A cluster resolves the structure interface. It is used to represent
 // a postgres sql database schema file
 // Its internals build on top of table and column, thus the strucutre of that
-// directory is going to need to be changed.
+// directory and the corresponding naming needs to be changed.
 
 package app
 

@@ -56,7 +56,7 @@ func (c *Column) Tags() string {
 	return fmt.Sprintf("`db:\"%v\"`", c.Name)
 }
 func (c *Column) Title() string {
-	return strings.Title(c.Name)
+	return strings.Title(c.Name) // should be capitalized in order to be exported
 }
 func (c *Column) Type() string {
 	return c.Classification
