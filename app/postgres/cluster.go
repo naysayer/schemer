@@ -3,12 +3,14 @@
 // Its internals build on top of table and column, thus the strucutre of that
 // directory and the corresponding naming needs to be changed.
 
-package app
+package postgres
 
 import (
+	"strings"
+
 	"github.com/naysayer/schemer/api/structure/attr"
-	"github.com/naysayer/schemer/api/table"
-	"github.com/naysayer/schemer/api/table/column"
+	"github.com/naysayer/schemer/app/postgres/table"
+	"github.com/naysayer/schemer/app/postgres/table/column"
 )
 
 type Cluster struct {
@@ -34,8 +36,11 @@ func (c Cluster) New(lines []string) (*Cluster, error) {
 	return &Cluster{Table: table, Columns: columns}, nil
 }
 
+// Title returns the title name of the table as the title. This is capitalized
+// as these are used to represent the names of structs, so we want to export
+// them by default.
 func (c *Cluster) Title() string {
-	return c.Table
+	return strings.Title(c.Table)
 }
 
 func (c *Cluster) Contents() []attr.Attr {

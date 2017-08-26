@@ -8,8 +8,8 @@ import (
 	"strings"
 
 	"github.com/naysayer/schemer/api/structure"
-	"github.com/naysayer/schemer/api/table"
-	"github.com/naysayer/schemer/app"
+	"github.com/naysayer/schemer/app/postgres"
+	"github.com/naysayer/schemer/app/postgres/table"
 )
 
 func main() {
@@ -24,7 +24,7 @@ func main() {
 	for _, l := range located {
 		tabLines := table.New(string(l))
 
-		cluster, err := app.Cluster{}.New(tabLines)
+		cluster, err := postgres.Cluster{}.New(tabLines)
 		if err != nil {
 			log.Println(err)
 		}
