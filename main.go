@@ -5,11 +5,10 @@ import (
 	"io/ioutil"
 	"log"
 	"regexp"
-	"strings"
 
+	"github.com/naysayer/schemer/api"
 	"github.com/naysayer/schemer/api/structure"
 	"github.com/naysayer/schemer/app/postgres"
-	"github.com/naysayer/schemer/app/postgres/table"
 )
 
 func main() {
@@ -22,9 +21,9 @@ func main() {
 	regex := regexp.MustCompile("(?s)CREATE TABLE.*?\\);")
 	located := regex.FindAll(contents, -1)
 	for _, l := range located {
-		tabLines := table.New(string(l))
+		tableLines := api.Seperate(string(l))
 
-		cluster, err := postgres.Cluster{}.New(tabLines)
+		cluster, err := postgres.Cluster{}.New(tableLines)
 		if err != nil {
 			log.Println(err)
 		}
@@ -40,9 +39,4 @@ func PrintStrucutres(structures []structure.Structure) {
 		fmt.Println()
 		fmt.Println()
 	}
-}
-
-func TableName(s string) string {
-	r := regexp.MustCompile("(CREATE TABLE) | (\\()")
-	return strings.Trim(r.ReplaceAllString(s, ""), " ")
 }
