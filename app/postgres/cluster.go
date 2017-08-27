@@ -6,8 +6,10 @@
 package postgres
 
 import (
+	"regexp"
 	"strings"
 
+	"github.com/naysayer/schemer/api"
 	"github.com/naysayer/schemer/api/structure"
 	"github.com/naysayer/schemer/api/structure/attr"
 	"github.com/naysayer/schemer/app/postgres/table"
@@ -17,6 +19,21 @@ import (
 type Cluster struct {
 	Table   string
 	Columns []*column.Column
+}
+
+// Title returns the title name of the table as the title. This is capitalized
+// as these are used to represent the names of structs, so we want to export
+// them by default.
+func (c Cluster) Title() string {
+	return strings.Title(c.Table)
+}
+
+func (c Cluster) Contents() []attr.Attr {
+	var atts []attr.Attr
+	for _, v := range c.Columns {
+		atts = append(atts, v)
+	}
+	return atts
 }
 
 func (c Cluster) New(lines []string) (structure.Structure, error) {
@@ -37,17 +54,21 @@ func (c Cluster) New(lines []string) (structure.Structure, error) {
 	return Cluster{Table: table, Columns: columns}, nil
 }
 
-// Title returns the title name of the table as the title. This is capitalized
-// as these are used to represent the names of structs, so we want to export
-// them by default.
-func (c Cluster) Title() string {
-	return strings.Title(c.Table)
-}
+func (c Cluster) NewFromBytes(bytes []byte) ([]structure.Structure, error) {
+	var structures []structure.Structure
+	regex := regexp.MustCompile("(?s)CREATE TABLE.*?\\);")
+	located := regex.FindAll(bytes, -1)
 
-func (c Cluster) Contents() []attr.Attr {
-	var atts []attr.Attr
-	for _, v := range c.Columns {
-		atts = append(atts, v)
+	for _, l := range located {
+		tableLines := api.Seperate(string(l))
+
+		cluster, err := Cluster{}.New(tableLines)
+		if err != nil {
+			return structures, err
+		}
+
+		structures = append(structures, cluster)
 	}
-	return atts
+
+	return structures, nil
 }
