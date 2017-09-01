@@ -15,14 +15,14 @@ func main() {
 		log.Fatal(err)
 	}
 
-	structures, err := postgres.Cluster{}.NewFromBytes(contents)
+	structures, err := postgres.NewFromBytes(contents)
 	if err != nil {
 		log.Fatal(err)
 	}
-	PrintStrucutres(structures)
+	printStrucutres(structures)
 }
 
-func PrintStrucutres(structures []structure.Structure) {
+func printStrucutres(structures []structure.Structure) {
 	for _, str := range structures {
 		fmt.Print(structure.Stringify(str))
 		fmt.Println()
