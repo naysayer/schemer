@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/naysayer/schemer/api"
 )
 
 var (
@@ -24,7 +26,6 @@ var (
 	pgPatternDate        = regexp.MustCompile(`^date\b`)
 
 	endOfCreate = ");"
-	dbStructTag = "`db:\"%v\"`" // very much like the golang types, this needs to be in its own package so it can be usable across the program
 
 	// ErrBeginningOfCreate signifies that the inputted string was a create statement and not a column
 	ErrBeginningOfCreate = errors.New("Beginning of create statement")
@@ -34,21 +35,30 @@ var (
 	ErrUnknownColumnType = errors.New("Unknown column type")
 )
 
+// Column conforms to the attr.Attr interface, and is used to represent
+// the colums that are within a table's create statement from a postgres schema.
 type Column struct {
 	Name           string
 	Classification string
 }
 
+// Tags returns a string that represents a db tag for a golang struct attribute
 func (c *Column) Tags() string {
-	return fmt.Sprintf(dbStructTag, c.Name)
+	return fmt.Sprintf(api.DbStructTag, c.Name)
 }
+
+// Title returns a string that represents the name of an attribute for a golang struct
 func (c *Column) Title() string {
 	return strings.Title(c.Name)
 }
+
+// Type returns a string that represents data type of an attribute for a golang struct
 func (c *Column) Type() string {
 	return c.Classification
 }
 
+// New returns a new pointer to a Column from an inputted string. The string
+// argument is ideally a line from within a create statment of a postgres schema
 func New(s string) (*Column, error) {
 	name, err := nameDetection(s)
 	if err != nil {
@@ -94,32 +104,28 @@ func typeDetection(s string) (string, error) {
 	return detection(s, fn)
 }
 
-// TODO: these returned strings are golang types either from this package or
-// a 3rd party package like sqlx. They are static across databasese as these
-// represent their golang counterparts so they should be extracted into a
-// package where they can be shared across this program.
 func columnType(s string) (string, error) {
 	switch {
 	case pgPatternInteger.MatchString(s):
-		return "int", nil
+		return api.TypeInt, nil
 	case pgPatternFloat.MatchString(s):
-		return "float", nil
+		return api.TypeInt, nil
 	case pgPatternString.MatchString(s):
-		return "string", nil
+		return api.TypeString, nil
 	case pgPatternText.MatchString(s):
-		return "string", nil
+		return api.TypeString, nil
 	case pgPatternTimestamp.MatchString(s):
-		return "time.Time", nil
+		return api.TypeTime, nil
 	case pgPatternJSON.MatchString(s):
-		return "types.JSONText", nil
+		return api.TypeJSONText, nil
 	case pgPatternJSONB.MatchString(s):
-		return "types.JSONText", nil
+		return api.TypeJSONText, nil
 	case pgPatternBool.MatchString(s):
-		return "bool", nil
+		return api.TypeBool, nil
 	case pgPatternHstore.MatchString(s):
-		return "types.JSONText", nil
+		return api.TypeJSONText, nil
 	case pgPatternDate.MatchString(s):
-		return "time.Time", nil
+		return api.TypeTime, nil
 	}
 
 	return "", ErrUnknownColumnType
