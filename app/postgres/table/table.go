@@ -1,3 +1,6 @@
+// Package table is simply used for the parsing and returning of a postgres
+// database scheme file in order to return the names of the tables within it's
+// create statements.
 package table
 
 import (
