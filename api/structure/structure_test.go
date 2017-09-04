@@ -7,34 +7,32 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-type Str struct {
+type str struct {
 }
 
-func (s Str) Title() string {
+func (s str) Title() string {
 	return "StructName"
 }
-func (s Str) Contents() []attr.Attr {
+func (s str) Contents() []attr.Attr {
 	return []attr.Attr{
-		Att{},
+		att{},
 	}
 }
 
-type Att struct {
+type att struct {
 }
 
-func (a Att) Title() string {
+func (a att) Title() string {
 	return "AttrName"
 }
-func (a Att) Type() string {
+func (a att) Type() string {
 	return "string"
 }
-func (a Att) Tags() string {
+func (a att) Tags() string {
 	return "`db:\"db_name\"`"
 }
 
 func TestStringify(t *testing.T) {
-	actual := Stringify(Str{})
 	expected := "type StructName struct {\nAttrName string `db:\"db_name\"`\n}"
-
-	assert.Equal(t, actual, expected)
+	assert.Equal(t, expected, Stringify(str{}))
 }

@@ -1,15 +1,19 @@
 # Schemer
+## Please note:
+This is a toy project so use with caution. 
 ## Overview
 Schemer is a command line tool that takes in a schema file from a database and outputs native golang structs, that match the table names, columns, and their corresponding types. 
 
-*Please note: This is considered experimental, and should not be fit for production of any type. It should be viewed largely as a proof of concept. 
-
 ## Getting started
-Please note: The only database this app currently supports is postgres.
+Please note: The only database this program currently supports is postgres.
 
-Place your schema file within the schema.txt file that is at the woot directory of this program, and run the following:
+### Running the program / binary
+Start the binary with the -schema option set to the filepath of the file you wish to have parsed.
 ```
-$ ./schemer
+$ ./schemer -schema=myschemafile.txt
 ```
+
+## Defining new schema type databases to parse
+In the event that one would want to expand this program to be able to parse say mysql schema files or the like; one would need to first conform to the Structure intface within the api/structure package. Check the app/postgres package for an example of how to do this.
 ## License
 MIT

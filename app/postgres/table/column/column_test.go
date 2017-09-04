@@ -3,6 +3,7 @@ package column
 import (
 	"testing"
 
+	"github.com/naysayer/schemer/api"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -50,7 +51,8 @@ func TestName(t *testing.T) {
 	}
 
 	for _, n := range Names {
-		s, _ := Name(n.NameString)
+		s, err := nameDetection(n.NameString)
+		assert.NoError(t, err)
 		assert.Equal(t, n.Expected, s)
 	}
 }
@@ -62,15 +64,15 @@ func TestType(t *testing.T) {
 	}{
 		{
 			"id integer NOT NULL,",
-			"int",
+			api.TypeInt,
 		},
 		{
 			"keyword_group_id integer,",
-			"int",
+			api.TypeInt,
 		},
 		{
 			"keyword_id integer,",
-			"int",
+			api.TypeInt,
 		},
 		{
 			`"primary" boolean DEFAULT false NOT NULL,`,
@@ -78,28 +80,33 @@ func TestType(t *testing.T) {
 		},
 		{
 			`"position" integer,`,
-			"int",
+			api.TypeInt,
 		},
 		{
 			"deleted boolean DEFAULT false NOT NULL,",
-			"bool",
+			api.TypeBool,
 		},
 		{
 			"notes text,",
-			"string",
+			api.TypeString,
 		},
 		{
 			"created_at timestamp without time zone,",
-			"time.Time",
+			api.TypeTime,
 		},
 		{
 			"updated_at timestamp without time zone",
-			"time.Time",
+			api.TypeTime,
+		},
+		{
+			"email character varying DEFAULT ''::character varying NOT NULL,",
+			api.TypeString,
 		},
 	}
 
 	for _, ty := range Types {
-		s, _ := Type(ty.NameString)
+		s, err := typeDetection(ty.NameString)
+		assert.NoError(t, err)
 		assert.Equal(t, ty.Expected, s)
 	}
 }

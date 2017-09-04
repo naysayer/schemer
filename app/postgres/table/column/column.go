@@ -1,3 +1,5 @@
+// Package column defines a struct called column that is used for the defining
+// and parsing of columns from postgres schemas.
 package column
 
 import (
@@ -5,121 +7,126 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/naysayer/schemer/api"
 )
 
 var (
-	CreateTableRegex = regexp.MustCompile("^CREATE TABLE")
-	FirstWordRegex   = regexp.MustCompile("(?:^|(?:[.!?]\\s))(\\w+)\\s")
-	WrappedRegex     = regexp.MustCompile(`\"`)
+	pgPatternCreateTable = regexp.MustCompile(`^CREATE TABLE`)
+	pgPatternwrapped     = regexp.MustCompile(`\"`)
+	pgPatternInteger     = regexp.MustCompile(`^integer\b`)
+	pgPatternFloat       = regexp.MustCompile(`^double precision\b`)
+	pgPatternString      = regexp.MustCompile(`^character varying\b`)
+	pgPatternText        = regexp.MustCompile(`^text\b`)
+	pgPatternTimestamp   = regexp.MustCompile(`^timestamp\b`)
+	pgPatternJSON        = regexp.MustCompile(`^json\b`)
+	pgPatternJSONB       = regexp.MustCompile(`^jsonb\b`)
+	pgPatternBool        = regexp.MustCompile(`^boolean\b`)
+	pgPatternHstore      = regexp.MustCompile(`^hstore\b`)
+	pgPatternDate        = regexp.MustCompile(`^date\b`)
+
+	endOfCreate = ");"
+
+	// ErrBeginningOfCreate signifies that the inputted string was a create statement and not a column
+	ErrBeginningOfCreate = errors.New("Beginning of create statement")
+	// ErrEndingOfCreate signifies that the inputted string is the ending of a create statement from a schema file
+	ErrEndingOfCreate = errors.New("End of create statement")
+	// ErrUnknownColumnType indicates that the inputted string contains a column of an unknown data type
+	ErrUnknownColumnType = errors.New("Unknown column type")
 )
 
-var (
-	PgIntegerRegex   = regexp.MustCompile("^integer\\b")
-	PgFloatRegex     = regexp.MustCompile("^double precision\\b")
-	PgStringRegex    = regexp.MustCompile("^character varying\\b")
-	PgTextRegex      = regexp.MustCompile("^text\\b")
-	PgTimestampRegex = regexp.MustCompile("^timestamp\\b")
-	PgJsonRegex      = regexp.MustCompile("^json\\b")
-	PgJsonBRegex     = regexp.MustCompile("^jsonb\\b")
-	PgBoolRegex      = regexp.MustCompile("^boolean\\b")
-	PgHstoreRegex    = regexp.MustCompile("^hstore\\b")
-	PgDateRegex      = regexp.MustCompile("^date\\b")
-)
-
-var (
-	BeginningOfCreateError = errors.New("Beginning of create statement")
-	EndingOfCreateError    = errors.New("End of create statement")
-
-	UnknownColumnType = errors.New("Unknown column type")
-)
-
+// Column conforms to the attr.Attr interface, and is used to represent
+// the colums that are within a table's create statement from a postgres schema.
 type Column struct {
 	Name           string
 	Classification string
 }
 
-func (c Column) Populate(s string) (*Column, error) {
-	name, err := Name(s)
+// Tags returns a string that represents a db tag for a golang struct attribute
+func (c *Column) Tags() string {
+	return fmt.Sprintf(api.DbStructTag, c.Name)
+}
+
+// Title returns a string that represents the name of an attribute for a golang struct
+func (c *Column) Title() string {
+	return strings.Title(c.Name)
+}
+
+// Type returns a string that represents data type of an attribute for a golang struct
+func (c *Column) Type() string {
+	return c.Classification
+}
+
+// New returns a new pointer to a Column from an inputted string. The string
+// argument is ideally a line from within a create statment of a postgres schema
+func New(s string) (*Column, error) {
+	name, err := nameDetection(s)
 	if err != nil {
-		return &Column{}, err
+		return nil, err
 	}
 
-	t, err := Type(s)
+	t, err := typeDetection(s)
 	if err != nil {
-		return &Column{}, err
+		return nil, err
 	}
 
 	return &Column{Name: name, Classification: t}, nil
 }
 
-func (c *Column) Tags() string {
-	return fmt.Sprintf("`db:\"%v\"`", c.Name)
-}
-func (c *Column) Title() string {
-	return strings.Title(c.Name) // should be capitalized in order to be exported
-}
-func (c *Column) Type() string {
-	return c.Classification
-}
-
-func guard(s string) error {
-	if s == ");" {
-		return EndingOfCreateError
+func detection(s string, fn func(string) (string, error)) (string, error) {
+	if s == endOfCreate {
+		return "", ErrEndingOfCreate
 	}
-	if CreateTableRegex.MatchString(s) {
-		return BeginningOfCreateError
+	if pgPatternCreateTable.MatchString(s) {
+		return "", ErrBeginningOfCreate
 	}
-	return nil
-
-}
-func Name(s string) (string, error) {
-	err := guard(s)
-	if err != nil {
-		return "", err
-	}
-
-	sep := strings.Split(s, " ")                       // seperates line into array by spaces
-	rawName := fmt.Sprintf("%v", sep[0])               // interplate value in case it is nil
-	name := WrappedRegex.ReplaceAllString(rawName, "") // In the event the name of the colum is wrapped with quites we strip it out
-	return name, nil
+	return fn(s)
 }
 
-func Type(s string) (string, error) {
-	err := guard(s)
-	if err != nil {
-		return "", err
+func nameDetection(s string) (string, error) {
+	fn := func(string) (string, error) {
+		sep := strings.Split(s, " ")                           // seperates line into array by spaces
+		rawName := fmt.Sprintf("%v", sep[0])                   // interplate value in case it is nil
+		name := pgPatternwrapped.ReplaceAllString(rawName, "") // In the event the name of the column is wrapped with quotes we strip it out
+		return name, nil
 	}
+	return detection(s, fn)
+}
 
-	sep := strings.Split(s, " ")
-	withoutName := append(sep[:0], sep[1:]...)
-	remaining := strings.Join(withoutName, " ")
+func typeDetection(s string) (string, error) {
+	fn := func(string) (string, error) {
+		sep := strings.Split(s, " ")
+		withoutName := append(sep[:0], sep[1:]...)
+		remaining := strings.Join(withoutName, " ")
 
-	return columnType(remaining)
+		return columnType(remaining)
+	}
+	return detection(s, fn)
 }
 
 func columnType(s string) (string, error) {
 	switch {
-	case PgIntegerRegex.MatchString(s):
-		return "int", nil
-	case PgFloatRegex.MatchString(s):
-		return "float", nil
-	case PgStringRegex.MatchString(s):
-		return "string", nil
-	case PgTextRegex.MatchString(s):
-		return "string", nil
-	case PgTimestampRegex.MatchString(s):
-		return "time.Time", nil
-	case PgJsonRegex.MatchString(s):
-		return "types.JSONText", nil
-	case PgJsonBRegex.MatchString(s):
-		return "types.JSONText", nil
-	case PgBoolRegex.MatchString(s):
-		return "bool", nil
-	case PgHstoreRegex.MatchString(s):
-		return "types.JSONText", nil // not sure this is going to work
-	case PgDateRegex.MatchString(s):
-		return "time.Time", nil // not sure this is going to work
+	case pgPatternInteger.MatchString(s):
+		return api.TypeInt, nil
+	case pgPatternFloat.MatchString(s):
+		return api.TypeInt, nil
+	case pgPatternString.MatchString(s):
+		return api.TypeString, nil
+	case pgPatternText.MatchString(s):
+		return api.TypeString, nil
+	case pgPatternTimestamp.MatchString(s):
+		return api.TypeTime, nil
+	case pgPatternJSON.MatchString(s):
+		return api.TypeJSONText, nil
+	case pgPatternJSONB.MatchString(s):
+		return api.TypeJSONText, nil
+	case pgPatternBool.MatchString(s):
+		return api.TypeBool, nil
+	case pgPatternHstore.MatchString(s):
+		return api.TypeJSONText, nil
+	case pgPatternDate.MatchString(s):
+		return api.TypeTime, nil
 	}
 
-	return "", UnknownColumnType
+	return "", ErrUnknownColumnType
 }

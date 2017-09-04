@@ -1,4 +1,4 @@
-// Packag strucutre used to define a structure interface and methods around it
+// Package structure used to define a structure interface and methods around it
 // that are ultimately used for the generation of golang structs
 package structure
 
