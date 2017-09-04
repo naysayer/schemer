@@ -47,12 +47,12 @@ func New(lines []string) (structure.Structure, error) {
 	var columns []*column.Column
 
 	for _, l := range lines {
-		col, err := column.Column{}.Populate(l)
-		if err != nil && err != column.EndingOfCreateError && err != column.BeginningOfCreateError {
+		col, err := column.New(l)
+		if err != nil && err != column.ErrEndingOfCreate && err != column.ErrBeginningOfCreate {
 			return nil, err
 		}
 
-		if err != column.EndingOfCreateError && err != column.BeginningOfCreateError {
+		if err != column.ErrEndingOfCreate && err != column.ErrBeginningOfCreate {
 			columns = append(columns, col)
 		}
 	}

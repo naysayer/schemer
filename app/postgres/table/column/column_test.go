@@ -50,7 +50,8 @@ func TestName(t *testing.T) {
 	}
 
 	for _, n := range Names {
-		s, _ := Name(n.NameString)
+		s, err := nameDetection(n.NameString)
+		assert.NoError(t, err)
 		assert.Equal(t, n.Expected, s)
 	}
 }
@@ -99,7 +100,8 @@ func TestType(t *testing.T) {
 	}
 
 	for _, ty := range Types {
-		s, _ := Type(ty.NameString)
+		s, err := typeDetection(ty.NameString)
+		assert.NoError(t, err)
 		assert.Equal(t, ty.Expected, s)
 	}
 }
