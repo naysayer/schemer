@@ -57,7 +57,7 @@ func New(lines []string) (structure.Structure, error) {
 		}
 	}
 
-	return &cluster{Table: table.Name(lines), Columns: columns}, nil
+	return &cluster{Table: table.Name(lines[0]), Columns: columns}, nil
 }
 
 // FromBytes given a slice of bytes returns a structure.Structure interface
