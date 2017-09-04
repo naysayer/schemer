@@ -19,13 +19,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	printStrucutres(structures)
-}
 
-func printStrucutres(structures []structure.Structure) {
 	for _, str := range structures {
-		fmt.Print(structure.Stringify(str))
-		fmt.Println()
-		fmt.Println()
+		fmt.Print(structure.Stringify(str), "\n\n")
 	}
 }

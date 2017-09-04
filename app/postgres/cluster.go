@@ -17,7 +17,7 @@ import (
 )
 
 var (
-	patternCreateTable = regexp.MustCompile("(?s)CREATE TABLE.*?\\);")
+	patternCreateTable = regexp.MustCompile(`(?s)CREATE TABLE.*?\);`)
 )
 
 // postgres resolves the structure interface. It is used to represent
