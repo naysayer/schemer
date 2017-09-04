@@ -116,9 +116,9 @@ func columnType(s string) (string, error) {
 	case PgBoolRegex.MatchString(s):
 		return "bool", nil
 	case PgHstoreRegex.MatchString(s):
-		return "types.JSONText", nil // not sure this is going to work
+		return "types.JSONText", nil // TODO: not sure this is going to work
 	case PgDateRegex.MatchString(s):
-		return "time.Time", nil // not sure this is going to work
+		return "time.Time", nil // TODO: not sure this is going to work
 	}
 
 	return "", UnknownColumnType

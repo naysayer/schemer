@@ -15,7 +15,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	structures, err := postgres.NewFromBytes(contents)
+	structures, err := postgres.FromBytes(contents)
 	if err != nil {
 		log.Fatal(err)
 	}

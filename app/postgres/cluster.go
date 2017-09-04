@@ -40,6 +40,9 @@ func (c *cluster) Contents() []attr.Attr {
 	return atts
 }
 
+// New returns a struct of cluster that conforms to the structure.Structure
+// interface. It does this by taking a slice of strings that represents
+// a create table statement within a postgres database schema
 func New(lines []string) (structure.Structure, error) {
 	var columns []*column.Column
 
@@ -57,7 +60,9 @@ func New(lines []string) (structure.Structure, error) {
 	return &cluster{Table: table.Name(lines), Columns: columns}, nil
 }
 
-func NewFromBytes(bytes []byte) ([]structure.Structure, error) {
+// FromBytes given a slice of bytes returns a structure.Structure interface
+// it does this by leveraging the New function accordingly.
+func FromBytes(bytes []byte) ([]structure.Structure, error) {
 	var structures []structure.Structure
 
 	for _, l := range patternCreateTable.FindAll(bytes, -1) {
