@@ -98,6 +98,10 @@ func TestType(t *testing.T) {
 			"updated_at timestamp without time zone",
 			api.TypeTime,
 		},
+		{
+			"email character varying DEFAULT ''::character varying NOT NULL,",
+			api.TypeString,
+		},
 	}
 
 	for _, ty := range Types {

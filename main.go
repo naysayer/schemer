@@ -1,6 +1,8 @@
 package main
 
 import (
+	"errors"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -9,8 +11,20 @@ import (
 	"github.com/naysayer/schemer/app/postgres"
 )
 
+var (
+	schema string
+
+	errEmptyFilepath = errors.New("please input a schema command line argument to the schema file you wish to parse")
+)
+
 func main() {
-	contents, err := ioutil.ReadFile("./schema.txt")
+	flag.StringVar(&schema, "schema", "", "Location of directory that contains the desired config file.")
+	flag.Parse()
+	if schema == "" {
+		log.Fatal(errEmptyFilepath)
+	}
+
+	contents, err := ioutil.ReadFile(schema)
 	if err != nil {
 		log.Fatal(err)
 	}
