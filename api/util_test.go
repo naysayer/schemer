@@ -32,7 +32,6 @@ func TestStringify(t *testing.T) {
 	}
 
 	for _, s := range Strings {
-		actual := Seperate(s.Base)
-		assert.Equal(t, s.Expected, actual)
+		assert.Equal(t, s.Expected, Seperate(s.Base), s.Description)
 	}
 }

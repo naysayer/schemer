@@ -30,7 +30,6 @@ func TestName(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		s := Name(c.NameString)
-		assert.Equal(t, c.Expected, s)
+		assert.Equal(t, c.Expected, Name(c.NameString))
 	}
 }

@@ -33,8 +33,6 @@ func (a att) Tags() string {
 }
 
 func TestStringify(t *testing.T) {
-	actual := Stringify(str{})
 	expected := "type StructName struct {\nAttrName string `db:\"db_name\"`\n}"
-
-	assert.Equal(t, actual, expected)
+	assert.Equal(t, expected, Stringify(str{}))
 }
