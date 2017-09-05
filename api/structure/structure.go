@@ -19,6 +19,9 @@ type Structure interface {
 
 // Stringify accepting a structure interface returns a string that represents
 // the native golang equilivent of that structure as a golang struct.
+// TODO: Pretty unhappy with this refactor
+// perhaps leverage the interface in a new type or something and have this
+// as a method on said new type?
 func Stringify(s Structure) string {
 	var buf bytes.Buffer
 
