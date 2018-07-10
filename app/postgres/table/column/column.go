@@ -12,6 +12,22 @@ import (
 )
 
 var (
+	// SQL statements patterns
+	pgSQLPatternInteger      = regexp.MustCompile(`^int\b`)
+	pgSQLPatternBigInt       = regexp.MustCompile(`^bigint\b`)
+	pgSQLPatternFloat        = regexp.MustCompile(`^double precision\b`)
+	pgSQLPatternDecimalFloat = regexp.MustCompile(`^decimal\b`)
+	pgSQLPatternString       = regexp.MustCompile(`^varchar\b`)
+	pgSQLPatternCharString   = regexp.MustCompile(`^char\b`)
+	pgSQLPatternText         = regexp.MustCompile(`^text\b`)
+	pgSQLPatternTimestamp    = regexp.MustCompile(`^timestamp\b`)
+	pgSQLPatternJSON         = regexp.MustCompile(`^json\b`)
+	pgSQLPatternJSONB        = regexp.MustCompile(`^jsonb\b`)
+	pgSQLPatternBool         = regexp.MustCompile(`^boolean\b`)
+	pgSQLPatternHstore       = regexp.MustCompile(`^hstore\b`)
+	pgSQLPatternDate         = regexp.MustCompile(`^date\b`)
+
+	// Schema statments patterns
 	pgPatternCreateTable = regexp.MustCompile(`^CREATE TABLE`)
 	pgPatternwrapped     = regexp.MustCompile(`\"`)
 	pgPatternInteger     = regexp.MustCompile(`^integer\b`)
@@ -59,13 +75,13 @@ func (c *Column) Type() string {
 
 // New returns a new pointer to a Column from an inputted string. The string
 // argument is ideally a line from within a create statment of a postgres schema
-func New(s string) (*Column, error) {
+func New(s string, sql bool) (*Column, error) {
 	name, err := nameDetection(s)
 	if err != nil {
 		return nil, err
 	}
 
-	t, err := typeDetection(s)
+	t, err := typeDetection(s, sql)
 	if err != nil {
 		return nil, err
 	}
@@ -93,18 +109,22 @@ func nameDetection(s string) (string, error) {
 	return detection(s, fn)
 }
 
-func typeDetection(s string) (string, error) {
+func typeDetection(s string, sql bool) (string, error) {
 	fn := func(string) (string, error) {
 		sep := strings.Split(s, " ")
 		withoutName := append(sep[:0], sep[1:]...)
 		remaining := strings.Join(withoutName, " ")
 
+		if sql {
+			return columnTypeSQL(remaining)
+		}
 		return columnType(remaining)
 	}
 	return detection(s, fn)
 }
 
 func columnType(s string) (string, error) {
+	s = strings.ToLower(s)
 	switch {
 	case pgPatternInteger.MatchString(s):
 		return api.TypeInt, nil
@@ -129,4 +149,33 @@ func columnType(s string) (string, error) {
 	}
 
 	return "", ErrUnknownColumnType
+}
+
+func columnTypeSQL(s string) (string, error) {
+	s = strings.ToLower(s)
+	switch {
+	case pgSQLPatternInteger.MatchString(s) || pgSQLPatternBigInt.MatchString(s):
+		return api.TypeInt, nil
+	case pgSQLPatternFloat.MatchString(s):
+		return api.TypeFloat, nil
+	case pgSQLPatternDecimalFloat.MatchString(s):
+		return api.TypeFloat, nil
+	case pgSQLPatternString.MatchString(s) || pgSQLPatternCharString.MatchString(s) || pgSQLPatternText.MatchString(s):
+		return api.TypeString, nil
+	case pgSQLPatternTimestamp.MatchString(s):
+		return api.TypeTime, nil
+	case pgSQLPatternJSON.MatchString(s):
+		return api.TypeJSONText, nil
+	case pgSQLPatternJSONB.MatchString(s):
+		return api.TypeJSONText, nil
+	case pgSQLPatternBool.MatchString(s):
+		return api.TypeBool, nil
+	case pgSQLPatternHstore.MatchString(s):
+		return api.TypeJSONText, nil
+	case pgSQLPatternDate.MatchString(s):
+		return api.TypeTime, nil
+	}
+
+	return "UNKNOWN", nil
+	// return "", ErrUnknownColumnType
 }

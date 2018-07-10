@@ -18,6 +18,7 @@ import (
 
 var (
 	patternCreateTable = regexp.MustCompile(`(?s)CREATE TABLE.*?\);`)
+	pgPrimaryKey       = regexp.MustCompile(`^primary key`)
 )
 
 // postgres resolves the structure interface. It is used to represent
@@ -47,11 +48,15 @@ func (c *postgres) Contents() []attr.Attr {
 // New returns a struct of postgres that conforms to the structure.Structure
 // interface. It does this by taking a slice of strings that represents
 // a create table statement within a postgres database schema
-func New(lines []string) (structure.Structure, error) {
+func New(lines []string, sql bool) (structure.Structure, error) {
 	var columns []*column.Column
 
 	for _, l := range lines {
-		col, err := column.New(l)
+		if shouldSkipLines(l) {
+			continue
+		}
+
+		col, err := column.New(l, sql)
 		if (err != nil) && (err != column.ErrEndingOfCreate && err != column.ErrBeginningOfCreate) {
 			return nil, err
 		}
@@ -66,13 +71,13 @@ func New(lines []string) (structure.Structure, error) {
 
 // FromBytes given a slice of bytes returns a structure.Structure interface
 // it does this by leveraging the New function accordingly.
-func FromBytes(bytes []byte) ([]structure.Structure, error) {
+func FromBytes(bytes []byte, sql bool) ([]structure.Structure, error) {
 	var structures []structure.Structure
 
 	for _, l := range patternCreateTable.FindAll(bytes, -1) {
 		tableLines := api.Seperate(string(l))
 
-		postgres, err := New(tableLines)
+		postgres, err := New(tableLines, sql)
 		if err != nil {
 			return nil, err
 		}
@@ -81,4 +86,9 @@ func FromBytes(bytes []byte) ([]structure.Structure, error) {
 	}
 
 	return structures, nil
+}
+
+func shouldSkipLines(s string) bool {
+	s = strings.ToLower(s)
+	return pgPrimaryKey.MatchString(s)
 }

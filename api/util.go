@@ -6,7 +6,7 @@ const (
 	//TypeInt represents a golang int data type as a string
 	TypeInt = "int"
 	//TypeFloat represents a golang float data type as a string
-	TypeFloat = "float"
+	TypeFloat = "float64"
 	//TypeString represents a golang string data type as a string
 	TypeString = "string"
 	//TypeTime represents a golang time.Time data type as a string

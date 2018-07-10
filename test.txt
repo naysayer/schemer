@@ -1,0 +1,234 @@
+/* items */
+CREATE TABLE items (
+  item_id varchar(50),
+  location_id varchar(256) NOT NULL REFERENCES locations(loacation_id),
+  container_id varchar(256) NOT NULL REFERENCES containers(container_id),
+  file_size BIGINT NOT NULL,
+  etag varchar(256),
+  file_extension varchar(25) NOT NULL,
+  file_path varchar(256),
+  folder_path varchar(256),
+  hash_c4id char(90) NOT NULL,
+  hash_md5 char(32) NOT NULL,
+  hash_sha1 char(40) NOT NULL,
+  hash_sha512 char(128) NOT NULL,
+  last_harvested TIMESTAMP WITH TIME ZONE NOT NULL,
+  last_modified TIMESTAMP WITH TIME ZONE NOT NULL,
+  location_kind varchar(256) NOT NULL,
+  location_name varchar(256) NOT NULL,
+  mime_type varchar(50) NOT NULL,
+  mime_category varchar(50) NOT NULL,
+  name varchar(256) NOT NULL,
+  parent_id varchar(50) REFERENCES items(item_id),
+  root_id varchar(50) REFERENCES items(item_id),
+  shared_link TEXT,
+  stow_container_id varchar(256) NOT NULL,
+  stow_container_name varchar(256) NOT NULL,
+  stow_url TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(item_id)
+);
+/* lots of indices to create here... */
+
+CREATE TYPE metadata_types AS ENUM ('item', 'segment', 'image');
+CREATE TABLE metadata (
+  metadata_id varchar(50)
+  item_id varchar(50) NOT NULL REFERENCES items(item_id) ON DELETE CASCADE,
+  type metadata_types NOT NULL,
+  parent_metadata_id varchar(50) REFERENCES metadata(metadata_id),
+  index DECIMAL DEFAULT -1.0,
+  nsfw boolean DEFAULT false,
+  thumbnail varchar(256),
+  thumbnail_width int,
+  thumbnail_height int,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(metadata_id)
+);
+CREATE INDEX IF NOT EXISTS metadata_item_id ON metadata(item_id);
+CREATE INDEX IF NOT EXISTS metadata_type ON metadata(type);
+CREATE INDEX IF NOT EXISTS metadata_index ON metadata(index);
+CREATE INDEX IF NOT EXISTS metadata_parent_id ON metadata(parent_metadata_id);
+
+CREATE TABLE item_harvest (
+  item_harvest_id varchar(50) NOT NULL,
+  harvester_version varchar(50) NOT NULL,
+  item_id varchar(50) NOT NULL REFERENCES items(item_id) ON DELETE CASCADE,
+  started_by varchar(256) NOT NULL REFERENCES users(user_id),
+  start_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  end_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY (harvest_id)
+);
+CREATE TABLE extractor_run (
+  extractor_run_id varchar(50) NOT NULL,
+  item_harvest_id varchar(50) NOT NULL REFERENCES item_harvest(item_harvest_id),
+  extractor_name varchar(100) NOT NULL,
+  version int NOT NULL,
+  skipped boolean DEFAULT false,
+  success boolean DEFAULT true,
+  error TEXT,
+  start_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  end_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(extractor_run_id)
+);
+
+/* timeline based types (s2t/captions, black frames, audio sounds) */
+
+CREATE TYPE speech_types AS ENUM ('speech-to-text', 'captions');
+CREATE TABLE speech (
+  speech_id varchar(50) NOT NULL,
+  item_id varchar(50) NOT NULL REFERENCES items(item_id) ON DELETE CASCADE,
+  speech_type speech_types NOT NULL,
+  start_at DECIMAL NOT NULL,
+  end_at DECIMAL NOT NULL,
+  "text" TEXT NOT NULL,
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  speaker varchar(50), /* unique identifier for the speaker via speaker detection */
+  language varchar(50),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(speech_id)
+);
+CREATE INDEX IF NOT EXISTS speech_item_id ON speech(item_id);
+CREATE INDEX IF NOT EXISTS speech_type ON speech(speech_type);
+CREATE INDEX IF NOT EXISTS speech_start_at ON speech(start_at);
+CREATE INDEX IF NOT EXISTS speech_end_at ON speech(end_at);
+CREATE INDEX IF NOT EXISTS speech_source ON speech(source);
+
+CREATE TABLE black_frames (
+  black_frame_id varchar(50) NOT NULL,
+  item_id varchar(50) NOT NULL REFERENCES items(item_id) ON DELETE CASCADE,
+  start_at DECIMAL NOT NULL,
+  end_at DECIMAL NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(black_frame_id)
+);
+
+CREATE TABLE sound_effects (
+  sound_effect_id varchar(50) NOT NULL,
+  item_id varchar(50) NOT NULL REFERENCES items(item_id) ON DELETE CASCADE,
+  start_at DECIMAL NOT NULL,
+  end_at DECIMAL NOT NULL,
+  name varchar(150) NOT NULL,
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(sound_effect_id)
+);
+
+/* HAS AND BELONGS TO MANY types (logos, landmarks, tags, adult categories) */
+
+CREATE TABLE tags (
+  tag_id varchar(50) NOT NULL,
+  tag varchar(100) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(tag_id)
+);
+CREATE INDEX IF NOT EXISTS tags_tag ON tags(tag);
+CREATE TABLE metadata_tags (
+  metadata_id varchar(50) NOT NULL REFERENCES metadata(metadata_id) ON DELETE CASCADE,
+  tag_id varchar(50) NOT NULL REFERENCES tags(tag_id),
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(metadata_id, tag_id)
+);
+
+CREATE TABLE logos (
+  logo_id varchar(50) NOT NULL,
+  name varchar(150) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(logo_id)
+);
+CREATE INDEX IF NOT EXISTS logos_name ON logos(name);
+CREATE TABLE metadata_logos (
+  metadata_id varchar(50) NOT NULL REFERENCES metadata(metadata_id) ON DELETE CASCADE,
+  logo_id varchar(50) NOT NULL REFERENCES logos(logo_id),
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(metadata_id, logo_id)
+);
+
+CREATE TABLE landmarks (
+  landmark_id varchar(50) NOT NULL,
+  name varchar(150) NOT NULL,
+  lat DECIMAL,
+  lon DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(landmark_id)
+);
+CREATE INDEX IF NOT EXISTS landmark_name ON landmarks(name);
+CREATE TABLE metadata_landmarks (
+  metadata_id varchar(50) NOT NULL REFERENCES metadata(metadata_id) ON DELETE CASCADE,
+  landmark_id_id varchar(50) NOT NULL REFERENCES landmarks(landmark_id),
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(metadata_id, landmark_id)
+);
+
+CREATE TABLE adult_categories (
+  adult_category_id varchar(50) NOT NULL,
+  name varchar(100) NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(adult_category_id)
+);
+CREATE INDEX IF NOT EXISTS tags_tag ON tags(tag);
+CREATE TABLE metadata_adult_categories (
+  metadata_id varchar(50) NOT NULL REFERENCES metadata(metadata_id) ON DELETE CASCADE,
+  adult_category_id varchar(50) NOT NULL REFERENCES adult_categories(adult_category_id),
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(metadata_id, adult_category_id)
+);
+
+/* one-off metadata types (descriptions, ocr) */
+CREATE TABLE descriptions (
+  description_id varchar(50) NOT NULL,
+  metadata_id varchar(50) NOT NULL REFERENCES items(item_id) ON DELETE CASCADE,
+  description TEXT NOT NULL,
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(description_id)
+);
+
+CREATE TABLE ocr (
+  ocr_id varchar(50) NOT NULL,
+  metadata_id varchar(50) NOT NULL REFERENCES metadata(metadata_id) ON DELETE CASCADE,
+  "text" TEXT NOT NULL,
+  bounding_box_top int,
+  bounding_box_left int,
+  bounding_box_width int,
+  bounding_box_height int,
+  source varchar(50) NOT NULL,
+  confidence DECIMAL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(description_id)
+);
+
+/* edit log */
+CREATE TYPE edit_types AS ENUM ('metadata', 'speech-to-text', 'caption', 'logo', 'tag', 'description', 'ocr', 'person', 'landmark');
+CREATE TABLE edits (
+  edit_id varchar(50) NOT NULL,
+  metadata_id varchar(50) NOT NULL REFERENCES metadata(metadata_id) ON DELETE CASCADE,
+  edit_type edit_types NOT NULL,
+  type_id varchar(50) NOT NULL, /* speech_id, tag_id, description_id, etc... */
+  "from" TEXT NOT NULL,
+  to TEXT NOT NULL,
+  edited_by varchar(256) NOT NULL REFERENCES users(user_id),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY(edit_id)
+);
